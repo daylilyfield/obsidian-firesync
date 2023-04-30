@@ -1,0 +1,35 @@
+<script lang="ts">
+  export let size = '1em'
+  export let rotate = false
+</script>
+
+<svg
+  class:rotate
+  xmlns="http://www.w3.org/2000/svg"
+  style:width={size}
+  style:height={size}
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  ><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path
+    d="M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+
+<style>
+  svg.rotate {
+    animation: rotate 2000ms linear infinite;
+  }
+
+  @keyframes rotate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
