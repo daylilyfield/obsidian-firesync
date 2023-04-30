@@ -1,0 +1,13 @@
+{
+  "git": {
+    "commitMessage": "release: ${version})",
+    "tag": true,
+    "tagName": "${version}",
+    "tagAnnotation": "${version}",
+    "push": true,
+    "pushArgs": ["--follow-tags"]
+  },
+  "npm": {
+    "publish": false
+  }
+}

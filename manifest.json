@@ -1,10 +1,10 @@
 {
-	"id": "obsidian-firesync",
-	"name": "Firesync",
-	"version": "0.1.0",
-	"minAppVersion": "1.0.0",
-	"description": "Sync your Obsidian vault with Firebase.",
-	"author": "daylilyfield",
-	"authorUrl": "https://github.com/daylilyfield",
-	"isDesktopOnly": false
+  "id": "obsidian-firesync",
+  "name": "Firesync",
+  "version": "0.1.0",
+  "minAppVersion": "1.1.0",
+  "description": "Sync your Obsidian vault with Firebase.",
+  "author": "daylilyfield",
+  "authorUrl": "https://github.com/daylilyfield",
+  "isDesktopOnly": false
 }
