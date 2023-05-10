@@ -1,9 +1,13 @@
+import { getLogger } from '$/logging/logger'
 import type { Context } from '$/models/context.model'
 import type { SyncFile } from '$/models/syncfile.model'
 import type { SyncTime } from '$/models/synctime.model'
 import type { InternalFile, VaultId } from '$/models/vault.model'
 import { hash } from '$/utils/hashes'
+import { createIgnoreFilter } from '$/utils/ignores'
 import { TFile, Vault, TAbstractFile, type ListedFiles, TFolder } from 'obsidian'
+
+const { warn } = getLogger('vault.service')
 
 export async function generateVaultId(vault: Vault): Promise<VaultId> {
   return await hash(vault.getName())
@@ -50,7 +54,13 @@ export async function fromInternalPath(context: Context, path: string): Promise<
 }
 
 export async function fromInternalFile(vault: Vault, file: InternalFile): Promise<SyncFile> {
-  const content = await vault.adapter.read(file.path)
+  let content = ''
+  try {
+    content = await vault.adapter.read(file.path)
+  } catch (e) {
+    warn('error reading file from:', file.path, e)
+  }
+
   return {
     id: await hash(file.path),
     path: file.path,
@@ -62,7 +72,12 @@ export async function fromInternalFile(vault: Vault, file: InternalFile): Promis
 }
 
 export async function fromVaultFile(vault: Vault, file: TFile): Promise<SyncFile> {
-  const content = await vault.cachedRead(file)
+  let content = ''
+  try {
+    content = await vault.cachedRead(file)
+  } catch (e) {
+    warn('error reading file from:', file.path, e)
+  }
   return {
     id: await hash(file.path),
     path: file.path,
@@ -81,7 +96,8 @@ export async function createFolders(context: Context, file: SyncFile): Promise<v
   for (const folder of folders) {
     acc.push(folder)
     const path = acc.join('/')
-    if (!context.obsidian.vault.adapter.exists(path)) {
+
+    if (!(await context.obsidian.vault.adapter.exists(path))) {
       await context.obsidian.vault.adapter.mkdir(path)
     }
   }
@@ -92,30 +108,12 @@ export async function findInternalFilesAfter(
   syncTime: SyncTime
 ): Promise<InternalFile[]> {
   const adapter = context.obsidian.vault.adapter
-  const ignores = [
-    '.DS_Store',
-    '.git/',
-    'node_modules/',
-    'data.json',
-    'firesync/coverage',
-    'firesync/src',
-    'firesync/.',
-    'firesync/README.md',
-    'firesync/cors.json',
-    'firesync/esbuild.config.mjs',
-    'firesync/firebase.json',
-    'firesync/jest.config.js',
-    'firesync/tsconfig.json',
-    'firesync/version-bump.mjs',
-    'firesync/firebase',
-  ]
-
-  const isAccepted = (path: string) => !ignores.some(pattern => path.includes(pattern))
+  const { isIgnored, isAccepted } = createIgnoreFilter(context)
 
   const dive = async (list: ListedFiles): Promise<string[]> => {
     const children = await Promise.all(
       list.folders.flatMap(async folder => {
-        if (!isAccepted(folder)) return []
+        if (isIgnored(folder)) return []
 
         const list = await adapter.list(folder)
         return await dive(list)
@@ -161,7 +159,7 @@ export async function findInternalFile(
 ): Promise<InternalFile | null> {
   const adapter = context.obsidian.vault.adapter
 
-  if (!adapter.exists(path)) return null
+  if (!(await adapter.exists(path))) return null
 
   return {
     path,

@@ -10,9 +10,14 @@ import type { SyncFile } from '$/models/syncfile.model'
 import type { EventQueue } from '$/stores/eventqueue.store'
 import { watchSyncFileChanges } from '$/services/firestore.service'
 import { getSyncTime, setSyncTime } from '$/services/synctime.service'
-import { findVaultFile, generateHash } from '$/services/vault.service'
-import { TFile } from 'obsidian'
+import {
+  findObsidianFile,
+  generateHash,
+  isFileType,
+  isInternalPath,
+} from '$/services/vault.service'
 import type { Unsubscriber } from 'svelte/store'
+import { createIgnoreFilter } from '$/utils/ignores'
 
 const { debug } = getLogger('firebase.listener')
 
@@ -56,7 +61,19 @@ export async function onFirebaseChanged(context: Context, remote: SyncFile, queu
     return
   }
 
-  const local = findVaultFile(context, remote.path)
+  if (!context.plugin.settings.internal && isInternalPath(context, remote.path)) {
+    debug('internal file sync is disabled:', remote.path)
+    return
+  }
+
+  const { isIgnored } = createIgnoreFilter(context)
+
+  if (isIgnored(remote.path)) {
+    debug('this path is specified to be ignored:', remote.path)
+    return
+  }
+
+  const local = await findObsidianFile(context, remote.path)
 
   if (!local) {
     if (remote.deleted || remote.trashed) {
@@ -72,8 +89,8 @@ export async function onFirebaseChanged(context: Context, remote: SyncFile, queu
     return
   }
 
-  if (!(local instanceof TFile)) {
-    debug('file is not a type of TFile. ignored.')
+  if (!isFileType(local)) {
+    debug('file is not a type of TFile or InternalFile. ignored.')
     return
   }
 

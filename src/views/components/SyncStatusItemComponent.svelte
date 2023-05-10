@@ -73,6 +73,7 @@
 
 <style>
   .sync-status-item-component {
+    height: 22px;
     position: relative;
     font-size: var(--font-ui-small);
     border-radius: var(--radius-s);
@@ -99,6 +100,7 @@
     flex: 0 0 auto;
     display: flex;
     align-items: center;
+    overflow: hidden;
   }
 
   .header > .message {

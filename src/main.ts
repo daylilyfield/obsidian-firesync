@@ -1,4 +1,4 @@
-import { getLogger } from '$/logging/logger'
+import { getLogger, setVerbose } from '$/logging/logger'
 import { createEventQueue, type EventQueue } from '$/stores/eventqueue.store'
 import {
   authenticate,
@@ -26,6 +26,7 @@ import {
   findInternalFilesAfter,
   findVaultFilesAfter,
   generateVaultId,
+  isInternalPath,
 } from '$/services/vault.service'
 import { binarySearch } from '$/utils/binsearch'
 import type { ObsidianContext } from '$/models/obsidian.model'
@@ -37,6 +38,8 @@ async function main(
   queue: EventQueue,
   settings: Settings
 ): Promise<Unsubscriber[]> {
+  setVerbose(settings.debug)
+
   if (!settings.sync) {
     debug('synchronization settings:', settings.sync)
     return []
@@ -74,7 +77,7 @@ async function main(
 
   let syncTime = getSyncTime()
 
-  const unsubscribers = [setUpLocalHandlers(context, queue)]
+  const unsubscribers = [setUpLocalHandlers(context, queue), setUpRemoteHandlers(context, queue)]
 
   if (syncTime === 0) {
     debug('start to sync: firsttime')
@@ -90,14 +93,17 @@ async function main(
     ...unsubscribers,
     setUpVaultListeners(context, queue),
     setUpFirebaseListeners(context, queue),
-    setUpRemoteHandlers(context, queue),
   ]
 }
 
 async function syncFirstTime(context: Context, queue: EventQueue): Promise<SyncTime> {
-  const remotes = await findSyncFilesAfter(context, 0)
+  const { internal } = context.plugin.settings
+
+  const remotes = (await findSyncFilesAfter(context, 0)).filter(
+    file => internal || !isInternalPath(context, file.path)
+  )
   const files = findVaultFilesAfter(context, 0)
-  const internals = await findInternalFilesAfter(context, 0)
+  const internals = internal ? await findInternalFilesAfter(context, 0) : []
   const locals: (TFile | InternalFile)[] = [...files, ...internals]
 
   remotes.sort((a, b) => a.path.localeCompare(b.path))
@@ -116,7 +122,11 @@ async function syncFirstTime(context: Context, queue: EventQueue): Promise<SyncT
       continue
     }
 
-    const remote = remotes[index]
+    const remote = remotes.splice(index, 1).at(0)
+
+    if (!remote) {
+      continue
+    }
 
     if (local.stat.mtime < remote.mtime) {
       debug('remote file is newer than local file:', local.path)
@@ -127,6 +137,14 @@ async function syncFirstTime(context: Context, queue: EventQueue): Promise<SyncT
     } else {
       debug('local file has same mtime with remote file:', local.path)
     }
+
+    if (syncTime < remote.mtime) {
+      syncTime = remote.mtime
+    }
+  }
+
+  for (const remote of remotes) {
+    await onFirebaseChanged(context, remote, queue)
 
     if (syncTime < remote.mtime) {
       syncTime = remote.mtime
@@ -217,6 +235,7 @@ export default class FiresyncPlugin extends Plugin {
   doStop() {
     if (this.unsubscribers.length > 0) {
       this.unsubscribers.forEach(it => it())
+      this.unsubscribers = []
     }
   }
 }

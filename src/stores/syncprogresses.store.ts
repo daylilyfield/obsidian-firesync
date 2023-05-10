@@ -1,6 +1,7 @@
+import { getLogger } from '$/logging/logger'
 import type { SyncProgress } from '$/models/syncprogress.model'
 import { binarySearch } from '$/utils/binsearch'
-import { get, type Readable, writable } from 'svelte/store'
+import { get, type Readable, writable, derived } from 'svelte/store'
 
 export type SyncProgresses = {
   get(id: SyncProgress['id']): SyncProgress
@@ -10,10 +11,16 @@ export type SyncProgresses = {
 }
 
 export function createSyncProgresses(): Readable<SyncProgress[]> & SyncProgresses {
+  const { debug } = getLogger('SyncProgresses')
   const progresses = writable<SyncProgress[]>([])
 
+  const loggable = derived(progresses, $progresses => {
+    debug('progresses:', $progresses)
+    return $progresses
+  })
+
   return {
-    subscribe: progresses.subscribe,
+    subscribe: loggable.subscribe,
 
     get(id: SyncProgress['id']) {
       const $progresses = get(progresses)

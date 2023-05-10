@@ -86,8 +86,9 @@ export function createEventQueue(settings: Settings): EventQueue {
           await tick()
           progresses.remove(base.id)
         } catch (e) {
-          error(`catch error while handling: ${event.type} for path: ${event.file.path}`)
+          error(`catch error while handling: ${event.type} for path: ${event.file.path}`, e)
           progresses.update({ id: base.id, error: true, message: e.toString() })
+          throw e
         }
 
         debug(`finish to handle: ${event.type} for path: ${event.file.path}`)

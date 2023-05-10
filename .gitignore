@@ -13,4 +13,6 @@ data.json
 
 .DS_Store
 
+coverage/
+
 .firebaserc

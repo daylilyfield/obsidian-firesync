@@ -1,5 +1,6 @@
 import type FiresyncPlugin from '$/main'
 import { setSyncTime } from '$/services/synctime.service'
+import ignore from 'ignore'
 import { PluginSettingTab, setIcon, Setting, ToggleComponent } from 'obsidian'
 
 async function display(view: SettingsTabView) {
@@ -149,13 +150,11 @@ async function display(view: SettingsTabView) {
 
   new Setting(containerEl)
     .setName('Reset Last Sync Time')
-    .setDesc('Reset last sync time. Please enable sync switch.')
+    .setDesc('Reset last sync time. Please enable sync switch above after updating this setting.')
     .addButton(button => {
-      button.setButtonText('RESET')
+      button.setButtonText('Reset')
       button.onClick(async () => {
         setSyncTime(0)
-        plugin.doStop()
-        await plugin.saveSettings({ sync: false })
         syncToggle.setValue(false)
       })
     })
@@ -173,6 +172,20 @@ async function display(view: SettingsTabView) {
         .onChange(async value => {
           await plugin.saveSettings({ debounce: value })
         })
+    })
+
+  new Setting(containerEl)
+    .setName('Ignored File Patterns')
+    .setDesc(
+      'Specify files not to be synchronized in ".gitignore" file format. Please enable sync switch above after updating this setting.'
+    )
+    .addTextArea(text => {
+      text.setValue('')
+      text.setValue(plugin.settings.ignores)
+      text.onChange(async ignores => {
+        await plugin.saveSettings({ ignores })
+        syncToggle.setValue(false)
+      })
     })
 
   new Setting(containerEl)

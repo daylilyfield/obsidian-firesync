@@ -15,9 +15,10 @@ import {
   isInternalPath,
   toSyncFile,
 } from '$/services/vault.service'
-import { TFile, type TAbstractFile } from 'obsidian'
+import { type TAbstractFile } from 'obsidian'
 import type { Unsubscriber } from 'svelte/store'
 import type { InternalFile } from '$/models/vault.model'
+import { createIgnoreFilter } from '$/utils/ignores'
 
 const { debug } = getLogger('vault.listener')
 
@@ -63,6 +64,13 @@ export function onVaultCreate(context: Context, queue: EventQueue) {
       return
     }
 
+    const { isIgnored } = createIgnoreFilter(context)
+
+    if (isIgnored(local.path)) {
+      debug('this path is specified to be ignored:', local.path)
+      return
+    }
+
     if (queue.online.isOnline()) {
       const remote = await findSyncFile(context, local.path)
 
@@ -96,6 +104,13 @@ export function onVaultModify(context: Context, queue: EventQueue) {
 
     if (!isFileType(local)) {
       debug('file is not a type of TFile or InternalFile. ignored.')
+      return
+    }
+
+    const { isIgnored } = createIgnoreFilter(context)
+
+    if (isIgnored(local.path)) {
+      debug('this path is specified to be ignored:', local.path)
       return
     }
 
@@ -138,6 +153,13 @@ export function onVaultDelete(context: Context, queue: EventQueue) {
       return
     }
 
+    const { isIgnored } = createIgnoreFilter(context)
+
+    if (isIgnored(local.path)) {
+      debug('this path is specified to be ignored:', local.path)
+      return
+    }
+
     if (queue.online.isOnline()) {
       const remote = await findSyncFile(context, local.path)
 
@@ -175,8 +197,10 @@ export function onVaultRename(context: Context, queue: EventQueue) {
       return
     }
 
-    if (!(local instanceof TFile)) {
-      debug('file is not a type of TFile. ignored.')
+    const { isIgnored } = createIgnoreFilter(context)
+
+    if (isIgnored(local.path)) {
+      debug('this path is specified to be ignored:', local.path)
       return
     }
 
@@ -209,6 +233,8 @@ export function onVaultRaw(
   onModify: ReturnType<typeof onVaultModify>
 ) {
   return async (path: string) => {
+    if (!context.plugin.settings.internal) return
+
     if (!isInternalPath(context, path)) return
 
     const internal = await findInternalFile(context, path)

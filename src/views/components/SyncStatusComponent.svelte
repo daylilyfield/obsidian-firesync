@@ -3,25 +3,11 @@
   import CloudIconComponent from '$/views/components/CloudIconComponent.svelte'
   import CloudOffIconComponent from '$/views/components/CloudOffIconComponent.svelte'
   import SyncStatusItemComponent from '$/views/components/SyncStatusItemComponent.svelte'
-  import { flip } from 'svelte/animate'
-  import { fade, fly } from 'svelte/transition'
+  import { fade } from 'svelte/transition'
 
   export let queue: EventQueue
 
   $: online = queue.online
-
-  const _dummy = [
-    {
-      id: '1',
-      message: 'sync /path/to/file/long/name.md',
-      progress: 25,
-      done: false,
-      error: false,
-    },
-    { id: '2', message: 'sync /path/to/file', progress: 25, done: true, error: false },
-    { id: '3', message: 'sync /path/to/file', progress: 25, done: false, error: true },
-    { id: '4', message: 'sync /path/to/file', progress: 75, done: false, error: false },
-  ]
 </script>
 
 <div class="sync-status-component">
@@ -37,7 +23,7 @@
   </header>
   <div class="items">
     {#each $queue as progress (progress.id)}
-      <div animate:flip in:fly={{ y: 30, duration: 300 }} out:fade={{ duration: 300, delay: 1500 }}>
+      <div in:fade={{ duration: 300 }} out:fade={{ duration: 300, delay: 1500 }}>
         <SyncStatusItemComponent
           {queue}
           id={progress.id}

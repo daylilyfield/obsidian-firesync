@@ -10,6 +10,7 @@ export type Settings = {
   sync: boolean
   internal: boolean
   debug: boolean
+  ignores: string
   debounce: number
   concurrency: number
 }
@@ -26,6 +27,7 @@ export const defaultSettings: Settings = {
   sync: false,
   internal: true,
   debug: false,
+  ignores: '',
   debounce: 3000,
   concurrency: 6,
 }
