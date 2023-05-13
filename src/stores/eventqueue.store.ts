@@ -31,7 +31,11 @@ export function createEventQueue(settings: Settings): EventQueue {
   const handlerMap = new Map<SyncEventType, SyncEventHandler>()
   const unsubscribers: Unsubscriber[] = []
 
+  type Pair = [SyncEvent, SyncProgress]
+
   let waitings: SyncEvent[] = []
+  let pendings: Pair[] = []
+  let runnings: Pair[] = []
   let timer = 0
 
   unsubscribers.push(
@@ -57,15 +61,33 @@ export function createEventQueue(settings: Settings): EventQueue {
     debug('consume waiting events')
 
     const candidates = distinctEvents(waitings)
+
     const pairs = candidates.map(candidate => {
       const progress = newSyncProgress(candidate)
       progresses.add(progress)
-      return [candidate, progress] as const
+      return [candidate, progress] as Pair
     })
 
     waitings = []
+    pendings = [...pendings, ...pairs]
 
     await tick()
+
+    if (runnings.length > 0) {
+      debug('already running another asynchronous process')
+      return
+    }
+
+    do {
+      runnings = pendings.splice(0, settings.concurrency)
+      await consumeRunnings(runnings)
+    } while (pendings.length > 0)
+
+    runnings = []
+  }
+
+  async function consumeRunnings(pairs: [SyncEvent, SyncProgress][]) {
+    if (pairs.length === 0) return
 
     const results = await Promise.allSettled(
       pairs.map(async ([event, base]) => {
@@ -105,9 +127,9 @@ export function createEventQueue(settings: Settings): EventQueue {
   }
 
   return {
-    online,
-
     subscribe: progresses.subscribe,
+
+    online,
 
     add(event) {
       debug('event added: ', event)

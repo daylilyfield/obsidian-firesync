@@ -133,6 +133,27 @@ async function display(view: SettingsTabView) {
     })
 
   new Setting(containerEl)
+    .setName('Sync Concurrency')
+    .setDesc('Synchronous processing is performed concurrently for a specified number of times.')
+    .addDropdown(dropdown => {
+      dropdown.addOptions({
+        '1': '1',
+        '3': '3',
+        '6': '6',
+        '10': '10',
+        '15': '15',
+      })
+      dropdown.setValue(plugin.settings.concurrency.toString())
+      dropdown.onChange(async value => {
+        await plugin.saveSettings({ concurrency: parseInt(value) })
+
+        if (syncToggle.getValue()) {
+          await plugin.doStart()
+        }
+      })
+    })
+
+  new Setting(containerEl)
     .setName('Sync Internal Files & Folders')
     .setDesc('Sync .obsidian folder and its files.')
     .addToggle(toggle => {
@@ -140,10 +161,8 @@ async function display(view: SettingsTabView) {
       toggle.onChange(async internal => {
         await plugin.saveSettings({ internal })
 
-        if (plugin.settings.sync) {
+        if (syncToggle.getValue()) {
           await plugin.doStart()
-        } else {
-          plugin.doStop()
         }
       })
     })

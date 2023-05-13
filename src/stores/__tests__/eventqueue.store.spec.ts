@@ -1,5 +1,5 @@
 import { defaultSettings } from '$/models/settings.model'
-import { SyncEvent } from '$/models/syncevent.model'
+import type { SyncEvent } from '$/models/syncevent.model'
 import { restoreSyncEvents, saveSyncEvents } from '$/services/syncevent.service'
 import { createEventQueue } from '$/stores/eventqueue.store'
 import { createFixtures } from '$/testing/fixtures'

@@ -201,17 +201,17 @@ describe('onVaultRename', () => {
 
     vi.mocked(queue.isSuppressed).mockReturnValue(true)
 
-    await onVaultDelete(context, queue)(file, previous)
+    await onVaultDelete(context, queue)(file)
 
     expect(queue.add).not.toBeCalled()
   })
 
   it('should not add local event when target is a directory', async () => {
-    const { context, file, queue, previous } = createFixtures()
+    const { context, file, queue } = createFixtures()
 
     vi.mocked(isFileType).mockReturnValue(false)
 
-    await onVaultDelete(context, queue)(file, previous)
+    await onVaultDelete(context, queue)(file)
 
     expect(queue.add).not.toBeCalled()
   })

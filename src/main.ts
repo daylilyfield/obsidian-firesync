@@ -30,6 +30,7 @@ import {
 } from '$/services/vault.service'
 import { binarySearch } from '$/utils/binsearch'
 import type { ObsidianContext } from '$/models/obsidian.model'
+import { SyncStatusbarView } from '$/views/statusbar.view'
 
 const { debug } = getLogger('main')
 
@@ -181,6 +182,7 @@ export default class FiresyncPlugin extends Plugin {
 
   private unsubscribers: Unsubscriber[] = []
   private queue: EventQueue
+  private statubar: SyncStatusbarView
 
   async onload(): Promise<void> {
     await this.loadSettings()
@@ -204,6 +206,8 @@ export default class FiresyncPlugin extends Plugin {
       },
     })
 
+    this.statubar = new SyncStatusbarView(this, this.queue)
+
     await this.doStart()
   }
 
@@ -211,6 +215,7 @@ export default class FiresyncPlugin extends Plugin {
     this.queue.destroy()
     this.unsubscribers.forEach(it => it())
     this.app.workspace.detachLeavesOfType(viewTypeStatus)
+    this.statubar.destroy()
   }
 
   async loadSettings() {

@@ -1,6 +1,6 @@
 {
   "git": {
-    "commitMessage": "release: ${version})",
+    "commitMessage": "release: v${version})",
     "tag": true,
     "tagName": "${version}",
     "tagAnnotation": "${version}",
