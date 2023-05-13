@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["app://obsidian.md"],
+    "origin": ["app://obsidian.md", "http://localhost", "capacitor://localhost"],
     "method": ["GET"],
     "responseHeader": ["Content-Type"],
     "maxAgeSeconds": 3600
