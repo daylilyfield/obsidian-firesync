@@ -25,7 +25,7 @@ export const defaultSettings: Settings = {
   email: '',
   password: '',
   sync: false,
-  internal: true,
+  internal: false,
   debug: false,
   ignores: '',
   debounce: 3000,

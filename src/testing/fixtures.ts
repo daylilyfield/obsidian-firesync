@@ -12,7 +12,7 @@ import { vi } from 'vitest'
 
 export function createFixtures() {
   const plugin: FiresyncPlugin = {
-    settings: { ...defaultSettings },
+    settings: { ...defaultSettings, internal: true },
   } as any
 
   const online: Online = {
