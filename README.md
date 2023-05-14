@@ -142,8 +142,14 @@ Open the status view to show progresses of synchronization with Firebase. If you
 
 ## QA
 
-Q. Firesync has prevented Obsidian from starting. What should I do?
-A. Make sure Obsidian is quited and open the file .obisidan/obisidian-firesync/data.json in an editor. Change `sync: true` to `sync:false` and save the file. Start Obsidian again.
+<dl>
+<dt>Q. Firesync has prevented Obsidian from starting. What should I do?<dt>
+<dd>
+
+Make sure Obsidian is quited and open the file .obisidan/obisidian-firesync/data.json in an editor. Change `sync: true` to `sync:false` and save the file. Start Obsidian again.
+
+</dd>
+</dl>
 
 ## Howt to develop
 
