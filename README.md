@@ -42,10 +42,11 @@ gsutil -m rsync -x "\.git" -r ./my-example-vault gs://my-example-vault.appspot.c
 </details>
 
 <details>
-<summary>&nbsp; 2. Create an authenticated user via Firebase Authentication.</summary>
+<summary>&nbsp;2. Create an authenticated user via Firebase Authentication.</summary>
 <dl><dd><dl><dd>
 
 Click `Authentication` menu on the left navigation bar, and click `Add user` button to create new authenticated user. Remember this user's email address and password as they will be used when setting up Firesync in Obsidain's preferences.
+
 <img src="assets/firebase-authentication.png" />
 
 </dd></dl></dd></dl>
@@ -105,7 +106,7 @@ In the `Installed plugins` section, please turn on the Firesync switch. You will
 </details>
 
 <details>
-<summary> 7. Open Firesync section and configure.</summary>
+<summary>&nbsp;7. Open Firesync section and configure.</summary>
 <dl><dd><dl><dd>
 
 Please enter the following options. These configuration items can be obtained from the [Firebase Console](https://console.firebase.google.com/).
