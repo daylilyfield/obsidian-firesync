@@ -11,7 +11,7 @@ export type SyncProgress = {
 
 export function newSyncProgress(event: SyncEvent): SyncProgress {
   return {
-    id: (Date.now() + performance.now()).toString(),
+    id: window.crypto.randomUUID(),
     message: event.file.path,
     progress: 0,
     done: false,
