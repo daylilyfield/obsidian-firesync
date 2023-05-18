@@ -1,6 +1,6 @@
 {
   "name": "obsidian-firesync",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Sync your Obsidian vaults via Firebase",
   "main": "main.js",
   "scripts": {
