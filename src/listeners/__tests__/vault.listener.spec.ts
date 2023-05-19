@@ -197,7 +197,7 @@ describe('onVaultDelete', () => {
 
 describe('onVaultRename', () => {
   it('should suppress', async () => {
-    const { context, file, queue, previous } = createFixtures()
+    const { context, file, queue } = createFixtures()
 
     vi.mocked(queue.isSuppressed).mockReturnValue(true)
 

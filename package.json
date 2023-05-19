@@ -11,6 +11,7 @@
     "test": "vitest run ./src/",
     "andon": "vitest ./src/",
     "cover": "vitest run --coverage ./src/",
+    "lint": "eslint ./src/",
     "cors": "gcloud storage buckets describe gs://${BUCKET} --format='default(cors)'",
     "cors:set": "gcloud storage buckets update gs://${BUCKET} --cors-file=cors.json",
     "deploy:rules": "npx firebase deploy --only firestore:rules,storage",

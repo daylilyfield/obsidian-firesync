@@ -2,6 +2,7 @@ import type { Context } from '$/models/context.model'
 import type { SyncFile } from '$/models/syncfile.model'
 import { getFirebaseSyncFilePath } from '$/services/firebase.service'
 import { hash } from '$/utils/hashes'
+import { withRetry } from '$/utils/retries'
 import {
   collection,
   doc,
@@ -59,13 +60,16 @@ export async function generateSyncFileId(path: string): Promise<string> {
 
 export async function findSyncFilesAfter(context: Context, syncTime: number): Promise<SyncFile[]> {
   const path = getFirebaseSyncFilePath(context)
-  const snapshot = await getDocs(
-    query(
-      collection(context.firebase.firestore, path).withConverter(converters.syncFile),
-      orderBy('mtime'),
-      startAfter(syncTime)
+
+  const snapshot = await withRetry(async () => {
+    return await getDocs(
+      query(
+        collection(context.firebase.firestore, path).withConverter(converters.syncFile),
+        orderBy('mtime'),
+        startAfter(syncTime)
+      )
     )
-  )
+  })
 
   return snapshot.docs.map(it => it.data()).sort((a, b) => a.path.localeCompare(b.path))
 }
@@ -74,9 +78,9 @@ export async function findSyncFile(context: Context, filePath: string): Promise<
   const id = await hash(filePath)
   const path = getFirebaseSyncFilePath(context, { id })
 
-  const snapshot = await getDoc(
-    doc(context.firebase.firestore, path).withConverter(converters.syncFile)
-  )
+  const snapshot = await withRetry(async () => {
+    return await getDoc(doc(context.firebase.firestore, path).withConverter(converters.syncFile))
+  })
 
   if (!snapshot.exists()) {
     return null
@@ -89,7 +93,9 @@ export async function createSyncFile(context: Context, file: SyncFile): Promise<
   const path = getFirebaseSyncFilePath(context, file)
   const docRef = doc(context.firebase.firestore, path).withConverter(converters.syncFile)
 
-  await setDoc(docRef, file)
+  await withRetry(async () => {
+    await setDoc(docRef, file)
+  })
 }
 
 export async function updateSyncFile(
@@ -98,7 +104,10 @@ export async function updateSyncFile(
 ): Promise<void> {
   const path = getFirebaseSyncFilePath(context, file)
   const docRef = doc(context.firebase.firestore, path).withConverter(converters.syncFile)
-  await setDoc(docRef, file, { merge: true })
+
+  await withRetry(async () => {
+    await setDoc(docRef, file, { merge: true })
+  })
 }
 
 export function watchSyncFileChanges(

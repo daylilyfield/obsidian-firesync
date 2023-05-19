@@ -1,6 +1,5 @@
 import type FiresyncPlugin from '$/main'
 import { setSyncTime } from '$/services/synctime.service'
-import ignore from 'ignore'
 import { PluginSettingTab, setIcon, Setting, ToggleComponent } from 'obsidian'
 
 async function display(view: SettingsTabView) {

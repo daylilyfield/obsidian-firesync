@@ -1,4 +1,3 @@
-import { getLogger } from '$/logging/logger'
 import type { Context } from '$/models/context.model'
 import type { SyncFile } from '$/models/syncfile.model'
 import { getFirebaseSyncFilePath } from '$/services/firebase.service'
@@ -10,23 +9,24 @@ import {
   uploadBytesResumable,
   type UploadTaskSnapshot,
 } from 'firebase/storage'
-
-const { error } = getLogger('storage.service')
+import { withRetry } from '$/utils/retries'
 
 export async function generateNextVersion(context: Context, file: SyncFile): Promise<number> {
   const path = getFirebaseSyncFilePath(context, file)
   const storageRef = ref(context.firebase.storage, path)
 
-  try {
-    const metadata = await getMetadata(storageRef)
-    return parseInt(metadata.generation) + 1
-  } catch (e /* StorageError */) {
-    if (e.code === 'storage/object-not-found') {
-      return 0
-    } else {
-      throw e
+  return await withRetry(async () => {
+    try {
+      const metadata = await getMetadata(storageRef)
+      return parseInt(metadata.generation) + 1
+    } catch (e /* StorageError */) {
+      if (e.code === 'storage/object-not-found') {
+        return 0
+      } else {
+        throw e
+      }
     }
-  }
+  })
 }
 
 export async function uploadFile(
@@ -37,26 +37,24 @@ export async function uploadFile(
 ): Promise<UploadTaskSnapshot> {
   const path = getFirebaseSyncFilePath(context, file)
   const storageRef = ref(context.firebase.storage, path)
-
   const data = await context.obsidian.vault.adapter.readBinary(file.path)
-  const task = uploadBytesResumable(storageRef, data, {
-    customMetadata: { 'x-firesync-version': version.toString() },
-  })
 
-  const unsubscribe = task.on(
-    'state_changed',
-    snapshot => {
+  return await withRetry(async () => {
+    const task = uploadBytesResumable(storageRef, data, {
+      customMetadata: { 'x-firesync-version': version.toString() },
+    })
+
+    const unsubscribe = task.on('state_changed', snapshot => {
       const proportion = snapshot.bytesTransferred / snapshot.totalBytes
       progress(proportion)
-    },
-    err => {
-      error('upload error:', file.path, err)
-    }
-  )
+    })
 
-  unsubscribe()
+    await task
 
-  return task
+    unsubscribe()
+
+    return task
+  })
 }
 
 export async function downloadFile(
@@ -68,31 +66,36 @@ export async function downloadFile(
   const storageRef = ref(context.firebase.storage, path)
   const url = await getDownloadURL(storageRef)
 
-  const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', url, true)
-    xhr.responseType = 'arraybuffer'
-    xhr.onprogress = event => {
-      progress(Math.round((event.loaded / event.total) * 100))
-    }
-    xhr.onload = _ => {
-      progress(1)
-      resolve(xhr.response)
-    }
-    xhr.onerror = _ => {
-      reject(`download error: ${file.path}`)
-    }
-    xhr.ontimeout = _ => {
-      reject(`download timeout: ${file.path}`)
-    }
-    xhr.send()
-  })
+  return await withRetry(async () => {
+    const bytes = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('GET', url, true)
+      xhr.responseType = 'arraybuffer'
+      xhr.onprogress = event => {
+        progress(Math.round((event.loaded / event.total) * 100))
+      }
+      xhr.onload = _ => {
+        progress(1)
+        resolve(xhr.response)
+      }
+      xhr.onerror = _ => {
+        reject(`download error: ${file.path}`)
+      }
+      xhr.ontimeout = _ => {
+        reject(`download timeout: ${file.path}`)
+      }
+      xhr.send()
+    })
 
-  return bytes
+    return bytes
+  })
 }
 
 export async function deleteFile(context: Context, file: SyncFile): Promise<void> {
   const path = getFirebaseSyncFilePath(context, file)
   const storageRef = ref(context.firebase.storage, path)
-  await deleteObject(ref(storageRef))
+
+  await withRetry(async () => {
+    await deleteObject(ref(storageRef))
+  })
 }
